@@ -1,9 +1,6 @@
 #include "gui.h"
 #include "input.h"
 
-#include <libevdev/libevdev.h>
-#include <fcntl.h>
-#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -48,19 +45,15 @@ int main() {
 
     int selected = 0;
 
+    XSetForeground(dpy, gc, 0x8c97ab);
     highlightRoundedRectangle(dpy, win, gc, boxPositions[0], GAP_HL);
-
-    int * rgb = (int*)malloc(sizeof(int) * 3);
-    unsigned long color = 0x4C566A;
-
-    int rc = 1;
+    XFlush(dpy);
 
     struct input_event evdev; //Loops through all events in queue
     struct input_event prominentEvent; //Desired event pulled out of queue
     struct input_event pastEvent; //Previous event used for joystick control
 
     while (1) {
-        //XDrawRectangle(dpy, win, gc, rando(WIDTH), rando(HEIGHT), rando(WIDTH), rando(HEIGHT));
         if (dev->rc == LIBEVDEV_READ_STATUS_SYNC || dev->rc == LIBEVDEV_READ_STATUS_SUCCESS || dev->rc == -EAGAIN) {
             if (libevdev_has_event_pending(dev->device)) {
                 //Reset the event grabbed from queue
@@ -85,7 +78,7 @@ int main() {
                 }
                 switch(prominentEvent.type) {
                 case 1: //Button press
-                        printf("Code: %d Value: %d\n", pastEvent.code, pastEvent.value);
+                        //printf("Code: %d Value: %d\n", pastEvent.code, pastEvent.value);
                     break;
                     case 3: //Directional Input
                         if(!prominentEvent.code) { //If the code is 0 it is horizontal
@@ -97,7 +90,7 @@ int main() {
                         }
                         else if (prominentEvent.code == 16) {
                             selected = selectBox(dpy, win, gc,prominentEvent.value, pastEvent.value, boxPositions, selected, 1);
-                            printf("selected: %d\n", selected);
+                            //printf("selected: %d\n", selected);
                             pastEvent = prominentEvent;
                         }
                     break;
