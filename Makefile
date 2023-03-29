@@ -1,16 +1,16 @@
 PROG = main
-DEPS = input#image.c
+DEPS = gui.c input#image.c
 SRC = ${PROG}.c
-OBJ = ${SRC:.c=.o}
+OBJ = gui.o input.o main.o#${SRC:.c=.o}
 
 CC = gcc
 CFLAGS = `pkg-config --cflags libevdev`
-LIBS = -lX11 -lpng `pkg-config --libs libevdev`
+LIBS = -lX11 `pkg-config --libs libevdev`
 
 all: ${PROG}
 
 ${PROG}: ${OBJ}
-	${CC} -o $@ ${LIBS} ${OBJ} ${DEPS}.o
+	${CC} -o $@ ${LIBS} ${OBJ}
 
 #${DEPS}: ${OBJ}
 #	${CC} -o $@ ${LIBS} ${OBJ}

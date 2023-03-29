@@ -1,0 +1,716 @@
+Index: main.c
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>#include <X11/Xlib.h>\n#include <X11/Xutil.h>\n\n#include \"input.h\"\n\n#include <stdio.h>\n#include <stdlib.h>\n#include <time.h>\n#include <unistd.h>\n#include <math.h>\n\nstatic Display* dpy;\nstatic int scr;\nstatic Window win;\nstatic GC gc;\n\n#define POSY 0\n#define POSX 0\n#define WIDTH 1920\n#define HEIGHT 1080\n#define BORDER 5\n\n#define GAP_HL 10\n#define BOXES 5\n\nunsigned long background = 0x2E3440;\nunsigned long foreground = 0x4C566A;\n\ntypedef struct Position {\n    int x;\n    int y;\n    int width;\n    int height;\n    int r;\n\n} Position;\n\nunsigned long RGB(int r, int g, int b) {\n    return b + (g<<8) + (r<<16);\n}\n\nvoid random_RGB(int * rgb)\n{\n    int i;\n    for(i=0;i<3;i++)\n    {\n        rgb[i]=rand()%256;\n    }\n}\n\nint rando (int bounds) {\n    return rand() % (bounds + 1);\n}\n\nvoid setPosition(Position * pos, int x, int y, int width, int height, int r) {\n    pos->x = x;\n    pos->y = y;\n    pos->width = width;\n    pos->height = height;\n    pos->r = r;\n}\n//void XFillRoundedRectangle(int x, int y, int width, int height, int r) {\n//\n//    int c = 2 * r;\n//\n//    int xRight = x + width - c;\n//    int yBottom = y + height - c;\n//\n//    XFillArc(dpy, win, gc, xRight, y, c, c, 90 * 64, -(90 * 64));\n//    XFillArc(dpy, win, gc, x, y, c, c, 90 * 64, 90 * 64);\n//    XFillArc(dpy, win, gc, x, yBottom, c, c, 180 * 64, 90*64);\n//    XFillArc(dpy, win, gc, xRight, yBottom, c, c, 270 * 64, 90*64);\n//    XFillRectangle(dpy, win, gc, x + r, y, width - c, height);\n//    XFillRectangle(dpy, win, gc, x, y + r, width, height - c);\n//\n//}\n\n//void highlightRoundedRectangle(int x, int y, int width, int height, int r, int g) {\n//\n//    r += g;\n//    int c = 2 * r;\n//\n//    int xRightC = x + width - c + g;\n//    int yBottomC = y + height - c + g;\n//\n//    int xRightL = x + width - r + g;\n//    int yBottomL = y + height - r + g;\n//\n//    int xLeftL = x + r - g;\n//    int yTopL = y + r - g;\n//    XDrawArc(dpy, win, gc, xRightC, y - g, c, c, 90 * 64, -(90 * 64));\n//    XDrawArc(dpy, win, gc, x - g, y - g, c, c, 90 * 64, 90 * 64);\n//    XDrawArc(dpy, win, gc, x - g, yBottomC, c, c, 180 * 64, 90*64);\n//    XDrawArc(dpy, win, gc, xRightC, yBottomC, c, c, 270 * 64, 90*64);\n//    XDrawLine(dpy, win, gc, x - g, yTopL, x - g, yBottomL);\n//    XDrawLine(dpy, win, gc, xRightL + r, yTopL, xRightL + r, yBottomL);\n//    XDrawLine(dpy, win, gc, xLeftL, y - g, xRightL, y - g);\n//    XDrawLine(dpy, win , gc, xRightL, yBottomL + r, xLeftL, yBottomL + r);\n//}\n\nvoid XFillRoundedRectangle(Position pos) {\n    int c = 2 * pos.r;\n\n    int xRight = pos.x + pos.width - c;\n    int yBottom = pos.y + pos.height - c;\n\n    XFillArc(dpy, win, gc, xRight, pos.y, c, c, 90 * 64, -(90 * 64));\n    XFillArc(dpy, win, gc, pos.x, pos.y, c, c, 90 * 64, 90 * 64);\n    XFillArc(dpy, win, gc, pos.x, yBottom, c, c, 180 * 64, 90*64);\n    XFillArc(dpy, win, gc, xRight, yBottom, c, c, 270 * 64, 90*64);\n    XFillRectangle(dpy, win, gc, pos.x + pos.r, pos.y, pos.width - c, pos.height);\n    XFillRectangle(dpy, win, gc, pos.x, pos.y + pos.r, pos.width, pos.height - c);\n}\n\nvoid highlightRoundedRectangle(Position pos, int g) {\n\n    pos.r += g;\n    int c = 2 * pos.r;\n\n    int xRightC = pos.x + pos.width - c + g;\n    int yBottomC = pos.y + pos.height - c + g;\n\n    int xRightL = pos.x + pos.width - pos.r + g;\n    int yBottomL = pos.y + pos.height - pos.r + g;\n\n    int xLeftL = pos.x + pos.r - g;\n    int yTopL = pos.y + pos.r - g;\n    XDrawArc(dpy, win, gc, xRightC, pos.y - g, c, c, 90 * 64, -(90 * 64));\n    XDrawArc(dpy, win, gc, pos.x - g, pos.y - g, c, c, 90 * 64, 90 * 64);\n    XDrawArc(dpy, win, gc, pos.x - g, yBottomC, c, c, 180 * 64, 90*64);\n    XDrawArc(dpy, win, gc, xRightC, yBottomC, c, c, 270 * 64, 90*64);\n    XDrawLine(dpy, win, gc, pos.x - g, yTopL, pos.x - g, yBottomL);\n    XDrawLine(dpy, win, gc, xRightL + pos.r, yTopL, xRightL + pos.r, yBottomL);\n    XDrawLine(dpy, win, gc, xLeftL, pos.y - g, xRightL, pos.y - g);\n    XDrawLine(dpy, win , gc, xRightL, yBottomL + pos.r, xLeftL, yBottomL + pos.r);\n}\n\nPosition * drawSelections (int boxes) {\n    int boxWidth = 300;\n    int boxHeight = 500;\n    int gap = boxWidth + 75;\n    int alt = 1;\n    int x = (WIDTH / 2) - (boxWidth / 2);\n\n    XSetForeground(dpy, gc, foreground);\n\n    int index = boxes / 2;\n\n    Position * boxPositions = (Position *)malloc(sizeof(Position) * boxes);\n\n    for(int i = 0; i < boxes; i++) {\n        alt = -alt;\n        x += gap * alt * i;\n\n        index += i * alt;\n\n        setPosition(&boxPositions[index], x, 200, boxWidth, boxHeight, 20);\n\n        //XFillRectangle(dpy, win, gc, x, 200, boxWidth, boxHeight);\n        XFillRoundedRectangle(boxPositions[index]);\n        printf(\"Location: %d to %d\\n\\n\", x, x + boxWidth);\n    }\n    XFlush(dpy);\n\n    return boxPositions;\n}\n\nint selectBox (int promVal, int pastVal, Position * boxPositions, int selected, int threshold) {\n\n    int increment = ((promVal >= threshold && pastVal <= threshold) - (promVal <= -threshold && pastVal >= -threshold));\n\n    if(abs(increment)) {\n        XSetForeground(dpy, gc, background);\n        highlightRoundedRectangle(boxPositions[selected], GAP_HL);\n\n        selected = (selected + increment + 5) % 5;\n\n        XSetForeground(dpy, gc, 0x8c97ab);\n        highlightRoundedRectangle(boxPositions[selected], GAP_HL);\n\n        XFlush(dpy);\n    }\n\n//    printf(\"%d, %d, %d\\n\", evdev->code == 0 && evdev->value > 16000, evdev->code == 0 && evdev->value < -16000, selected);\n    return selected;\n}\n\nint main() {\n\n    const char* file = \"/dev/input/event24\";\n    struct controller* dev = init_input(file);\n\n    dpy = XOpenDisplay(NULL);\n    win = XCreateSimpleWindow(dpy, DefaultRootWindow(dpy), 0, 0, WIDTH, HEIGHT, 0, foreground, background);\n\n    XGCValues mask;\n\n    mask.line_width = 5;\n\n    XEvent event;\n\n    XSelectInput(dpy, win, KeyPressMask);\n\n    gc = XCreateGC(dpy, win, GCLineWidth, &mask);\n\n    XMapWindow(dpy, win);\n    XFlush(dpy);\n    usleep(20000);\n\n    Position * boxPositions;\n\n    if(dev->device == NULL) {\n        printf(\"No controller connected\\n\");\n        return 0;\n\n//        struct input_event evdev;\n    }\n    boxPositions = drawSelections(BOXES);\n\n    int selected = 0;\n\n    highlightRoundedRectangle(boxPositions[0], GAP_HL);\n\n    int * rgb = (int*)malloc(sizeof(int) * 3);\n    unsigned long color = 0x4C566A;\n\n    int rc = 1;\n\n\n\n    clock_t start, end;\n\n    start = clock();\n\n    struct input_event evdev;\n    struct input_event prominentEvent;\n    struct input_event pastEvent;\n\n\n\n        while (1) {\n            //XDrawRectangle(dpy, win, gc, rando(WIDTH), rando(HEIGHT), rando(WIDTH), rando(HEIGHT));\n            if (dev->rc == LIBEVDEV_READ_STATUS_SYNC || dev->rc == LIBEVDEV_READ_STATUS_SUCCESS || dev->rc == -EAGAIN) {\n////                printf(\"Hello\\n\");\n//\n//                dev->rc = libevdev_next_event(dev->device, LIBEVDEV_READ_FLAG_NORMAL | LIBEVDEV_READ_FLAG_BLOCKING, &evdev);\n//                if (dev->rc == LIBEVDEV_READ_STATUS_SUCCESS) {\n//                    do {\n//                        end = clock();\n////                        printf(\"%d\\n\", libevdev_has_event_pending(dev->device));\n//                        printf(\"%d\\n\", evdev.type);\n//                        //            printf(\"Success!\\n\");\n//                        switch (evdev.type) {\n//\n//                            case 1:\n//                                printf(\"oi\\n\");\n//                                random_RGB(rgb);\n//                                break;\n//                            case 3:\n//                                if ((end - start) > 250) {\n//                                    printf(\"3oi\\n\");\n//                                    //                                selected = selectBox(&evdev, selected);\n//                                    selected = (selected + ((evdev.value > 16000) - (evdev.value < -16000)) * !evdev.code) + 5 % 5;\n////                                    printf(\"%d\\n\", selected);\n//                                    //                                printf(\"%d\\n\", evdev.code);\n//                                }\n//                                pastEvent = evdev;\n//                                break;\n//\n//                            default:\n//\n//                        }\n//                    } while(!libevdev_has_event_pending(dev->device));\n//\n//                }\n\n                if (libevdev_has_event_pending(dev->device)) {\n                    prominentEvent.type = 0;\n                    prominentEvent.value = 0;\n                    while(libevdev_has_event_pending(dev->device)) {\n                        dev->rc = libevdev_next_event(dev->device,\n                                                      LIBEVDEV_READ_FLAG_NORMAL | LIBEVDEV_READ_FLAG_BLOCKING, &evdev);\n                        if (dev->rc == LIBEVDEV_READ_STATUS_SUCCESS) {\n                            if(evdev.type == 1) {\n                                prominentEvent = evdev;\n                                prominentEvent.type = !(prominentEvent.value);\n                            }\n                            else if(evdev.type == 3) {\n                                if(abs(evdev.value) > abs(prominentEvent.value)) {\n                                    prominentEvent = evdev;\n                                }\n                            }\n                        }\n                    }\n                        switch(prominentEvent.type) {\n                        case 1:\n                                printf(\"Code: %d Value: %d\\n\", pastEvent.code, pastEvent.value);\n                            break;\n                            case 3:\n                                if(!prominentEvent.code) {\n                                    selected = selectBox(prominentEvent.value, pastEvent.value, boxPositions, selected, 22000);\n                                    printf(\"selected: %d\\n\", selected);\n                                    pastEvent = prominentEvent;\n                                }\n                                else if (prominentEvent.code == 16) {\n                                    selected = selectBox(prominentEvent.value, pastEvent.value, boxPositions, selected, 1);\n                                    printf(\"selected: %d\\n\", selected);\n                                    pastEvent = prominentEvent;\n                                }\n                            break;\n                    }\n                }\n            }\n        usleep(10000);\n//        }\n    }\n\n    XUnmapWindow(dpy,win);\n    XDestroyWindow(dpy, win);\n    XCloseDisplay(dpy);\n\n    return 0;\n}\n\n//void keyboardLoop() {\n//    while (1) {\n//        XNextEvent(dpy, &event);\n//        if(event.type == KeyPress) {\n//\n//            KeySym keysym = XLookupKeysym(&event.xkey, 0);\n////            printf(\"%lu\\n\", keysym);\n//            switch (keysym) {\n//                case XK_Right:\n//                    XSetForeground(dpy, gc, background);\n//                    highlightRoundedRectangle(boxPositions[selected], 5);\n//                    selected = (selected + 1) % 5;\n//                    XSetForeground(dpy, gc, 0x8c97ab);\n//                    highlightRoundedRectangle(boxPositions[selected], 5);\n//\n//                    break;\n//                case XK_Left:\n//                    XSetForeground(dpy, gc, background);\n//                    highlightRoundedRectangle(boxPositions[selected], 5);\n//                    selected = ((selected - 1) + 5) % 5;\n//                    XSetForeground(dpy, gc, 0x8c97ab);\n//                    highlightRoundedRectangle(boxPositions[selected], 5);\n//                    break;\n//            }\n//            printf(\"selected: %d\\n\", selected);\n//\n//        }\n//    }\n//}
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/main.c b/main.c
+--- a/main.c	(revision caa8d96fcf915610034e701e72c9f445bc44b67d)
++++ b/main.c	(date 1680059078313)
+@@ -1,11 +1,11 @@
+-#include <X11/Xlib.h>
+-#include <X11/Xutil.h>
+-
++#include "gui.h"
+ #include "input.h"
+ 
++#include <libevdev/libevdev.h>
++#include <fcntl.h>
++#include <errno.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+-#include <time.h>
+ #include <unistd.h>
+ #include <math.h>
+ 
+@@ -14,305 +14,97 @@
+ static Window win;
+ static GC gc;
+ 
+-#define POSY 0
+-#define POSX 0
+-#define WIDTH 1920
+-#define HEIGHT 1080
+-#define BORDER 5
+-
+-#define GAP_HL 10
+-#define BOXES 5
+-
+-unsigned long background = 0x2E3440;
+-unsigned long foreground = 0x4C566A;
+-
+-typedef struct Position {
+-    int x;
+-    int y;
+-    int width;
+-    int height;
+-    int r;
+-
+-} Position;
+-
+-unsigned long RGB(int r, int g, int b) {
+-    return b + (g<<8) + (r<<16);
+-}
+-
+-void random_RGB(int * rgb)
+-{
+-    int i;
+-    for(i=0;i<3;i++)
+-    {
+-        rgb[i]=rand()%256;
+-    }
+-}
+-
+-int rando (int bounds) {
+-    return rand() % (bounds + 1);
+-}
+-
+-void setPosition(Position * pos, int x, int y, int width, int height, int r) {
+-    pos->x = x;
+-    pos->y = y;
+-    pos->width = width;
+-    pos->height = height;
+-    pos->r = r;
+-}
+-//void XFillRoundedRectangle(int x, int y, int width, int height, int r) {
+-//
+-//    int c = 2 * r;
+-//
+-//    int xRight = x + width - c;
+-//    int yBottom = y + height - c;
+-//
+-//    XFillArc(dpy, win, gc, xRight, y, c, c, 90 * 64, -(90 * 64));
+-//    XFillArc(dpy, win, gc, x, y, c, c, 90 * 64, 90 * 64);
+-//    XFillArc(dpy, win, gc, x, yBottom, c, c, 180 * 64, 90*64);
+-//    XFillArc(dpy, win, gc, xRight, yBottom, c, c, 270 * 64, 90*64);
+-//    XFillRectangle(dpy, win, gc, x + r, y, width - c, height);
+-//    XFillRectangle(dpy, win, gc, x, y + r, width, height - c);
+-//
+-//}
+-
+-//void highlightRoundedRectangle(int x, int y, int width, int height, int r, int g) {
+-//
+-//    r += g;
+-//    int c = 2 * r;
+-//
+-//    int xRightC = x + width - c + g;
+-//    int yBottomC = y + height - c + g;
+-//
+-//    int xRightL = x + width - r + g;
+-//    int yBottomL = y + height - r + g;
+-//
+-//    int xLeftL = x + r - g;
+-//    int yTopL = y + r - g;
+-//    XDrawArc(dpy, win, gc, xRightC, y - g, c, c, 90 * 64, -(90 * 64));
+-//    XDrawArc(dpy, win, gc, x - g, y - g, c, c, 90 * 64, 90 * 64);
+-//    XDrawArc(dpy, win, gc, x - g, yBottomC, c, c, 180 * 64, 90*64);
+-//    XDrawArc(dpy, win, gc, xRightC, yBottomC, c, c, 270 * 64, 90*64);
+-//    XDrawLine(dpy, win, gc, x - g, yTopL, x - g, yBottomL);
+-//    XDrawLine(dpy, win, gc, xRightL + r, yTopL, xRightL + r, yBottomL);
+-//    XDrawLine(dpy, win, gc, xLeftL, y - g, xRightL, y - g);
+-//    XDrawLine(dpy, win , gc, xRightL, yBottomL + r, xLeftL, yBottomL + r);
+-//}
+-
+-void XFillRoundedRectangle(Position pos) {
+-    int c = 2 * pos.r;
+-
+-    int xRight = pos.x + pos.width - c;
+-    int yBottom = pos.y + pos.height - c;
+-
+-    XFillArc(dpy, win, gc, xRight, pos.y, c, c, 90 * 64, -(90 * 64));
+-    XFillArc(dpy, win, gc, pos.x, pos.y, c, c, 90 * 64, 90 * 64);
+-    XFillArc(dpy, win, gc, pos.x, yBottom, c, c, 180 * 64, 90*64);
+-    XFillArc(dpy, win, gc, xRight, yBottom, c, c, 270 * 64, 90*64);
+-    XFillRectangle(dpy, win, gc, pos.x + pos.r, pos.y, pos.width - c, pos.height);
+-    XFillRectangle(dpy, win, gc, pos.x, pos.y + pos.r, pos.width, pos.height - c);
+-}
+-
+-void highlightRoundedRectangle(Position pos, int g) {
+-
+-    pos.r += g;
+-    int c = 2 * pos.r;
+-
+-    int xRightC = pos.x + pos.width - c + g;
+-    int yBottomC = pos.y + pos.height - c + g;
+-
+-    int xRightL = pos.x + pos.width - pos.r + g;
+-    int yBottomL = pos.y + pos.height - pos.r + g;
+-
+-    int xLeftL = pos.x + pos.r - g;
+-    int yTopL = pos.y + pos.r - g;
+-    XDrawArc(dpy, win, gc, xRightC, pos.y - g, c, c, 90 * 64, -(90 * 64));
+-    XDrawArc(dpy, win, gc, pos.x - g, pos.y - g, c, c, 90 * 64, 90 * 64);
+-    XDrawArc(dpy, win, gc, pos.x - g, yBottomC, c, c, 180 * 64, 90*64);
+-    XDrawArc(dpy, win, gc, xRightC, yBottomC, c, c, 270 * 64, 90*64);
+-    XDrawLine(dpy, win, gc, pos.x - g, yTopL, pos.x - g, yBottomL);
+-    XDrawLine(dpy, win, gc, xRightL + pos.r, yTopL, xRightL + pos.r, yBottomL);
+-    XDrawLine(dpy, win, gc, xLeftL, pos.y - g, xRightL, pos.y - g);
+-    XDrawLine(dpy, win , gc, xRightL, yBottomL + pos.r, xLeftL, yBottomL + pos.r);
+-}
+-
+-Position * drawSelections (int boxes) {
+-    int boxWidth = 300;
+-    int boxHeight = 500;
+-    int gap = boxWidth + 75;
+-    int alt = 1;
+-    int x = (WIDTH / 2) - (boxWidth / 2);
+-
+-    XSetForeground(dpy, gc, foreground);
+-
+-    int index = boxes / 2;
+-
+-    Position * boxPositions = (Position *)malloc(sizeof(Position) * boxes);
+-
+-    for(int i = 0; i < boxes; i++) {
+-        alt = -alt;
+-        x += gap * alt * i;
+-
+-        index += i * alt;
+-
+-        setPosition(&boxPositions[index], x, 200, boxWidth, boxHeight, 20);
+-
+-        //XFillRectangle(dpy, win, gc, x, 200, boxWidth, boxHeight);
+-        XFillRoundedRectangle(boxPositions[index]);
+-        printf("Location: %d to %d\n\n", x, x + boxWidth);
+-    }
+-    XFlush(dpy);
+-
+-    return boxPositions;
+-}
+-
+-int selectBox (int promVal, int pastVal, Position * boxPositions, int selected, int threshold) {
+-
+-    int increment = ((promVal >= threshold && pastVal <= threshold) - (promVal <= -threshold && pastVal >= -threshold));
+-
+-    if(abs(increment)) {
+-        XSetForeground(dpy, gc, background);
+-        highlightRoundedRectangle(boxPositions[selected], GAP_HL);
+-
+-        selected = (selected + increment + 5) % 5;
+-
+-        XSetForeground(dpy, gc, 0x8c97ab);
+-        highlightRoundedRectangle(boxPositions[selected], GAP_HL);
+-
+-        XFlush(dpy);
+-    }
+-
+-//    printf("%d, %d, %d\n", evdev->code == 0 && evdev->value > 16000, evdev->code == 0 && evdev->value < -16000, selected);
+-    return selected;
+-}
+-
+-int main() {
+-
+-    const char* file = "/dev/input/event24";
+-    struct controller* dev = init_input(file);
+-
++void init() {
+     dpy = XOpenDisplay(NULL);
+     win = XCreateSimpleWindow(dpy, DefaultRootWindow(dpy), 0, 0, WIDTH, HEIGHT, 0, foreground, background);
+ 
+     XGCValues mask;
+-
+     mask.line_width = 5;
+-
+-    XEvent event;
+-
+-    XSelectInput(dpy, win, KeyPressMask);
+-
+     gc = XCreateGC(dpy, win, GCLineWidth, &mask);
+ 
+     XMapWindow(dpy, win);
+     XFlush(dpy);
+     usleep(20000);
++}
++
++int main() {
++
++    const char* file = "/dev/input/event24";
++    struct controller* dev = init_input(file);
++
++    init();
++//    Keyboard input was tested at first. Keeping for later implementation
++//    XEvent event;
++//    XSelectInput(dpy, win, KeyPressMask);
+ 
+     Position * boxPositions;
+ 
+     if(dev->device == NULL) {
+         printf("No controller connected\n");
+         return 0;
+-
+-//        struct input_event evdev;
+     }
+-    boxPositions = drawSelections(BOXES);
++
++    boxPositions = drawSelections(dpy, win, gc);
+ 
+     int selected = 0;
+ 
+-    highlightRoundedRectangle(boxPositions[0], GAP_HL);
++    highlightRoundedRectangle(dpy, win, gc, boxPositions[0], GAP_HL);
+ 
+     int * rgb = (int*)malloc(sizeof(int) * 3);
+     unsigned long color = 0x4C566A;
+ 
+     int rc = 1;
+ 
+-
+-
+-    clock_t start, end;
+-
+-    start = clock();
+-
+-    struct input_event evdev;
+-    struct input_event prominentEvent;
+-    struct input_event pastEvent;
+-
+-
++    struct input_event evdev; //Loops through all events in queue
++    struct input_event prominentEvent; //Desired event pulled out of queue
++    struct input_event pastEvent; //Previous event used for joystick control
+ 
+-        while (1) {
+-            //XDrawRectangle(dpy, win, gc, rando(WIDTH), rando(HEIGHT), rando(WIDTH), rando(HEIGHT));
+-            if (dev->rc == LIBEVDEV_READ_STATUS_SYNC || dev->rc == LIBEVDEV_READ_STATUS_SUCCESS || dev->rc == -EAGAIN) {
+-////                printf("Hello\n");
+-//
+-//                dev->rc = libevdev_next_event(dev->device, LIBEVDEV_READ_FLAG_NORMAL | LIBEVDEV_READ_FLAG_BLOCKING, &evdev);
+-//                if (dev->rc == LIBEVDEV_READ_STATUS_SUCCESS) {
+-//                    do {
+-//                        end = clock();
+-////                        printf("%d\n", libevdev_has_event_pending(dev->device));
+-//                        printf("%d\n", evdev.type);
+-//                        //            printf("Success!\n");
+-//                        switch (evdev.type) {
+-//
+-//                            case 1:
+-//                                printf("oi\n");
+-//                                random_RGB(rgb);
+-//                                break;
+-//                            case 3:
+-//                                if ((end - start) > 250) {
+-//                                    printf("3oi\n");
+-//                                    //                                selected = selectBox(&evdev, selected);
+-//                                    selected = (selected + ((evdev.value > 16000) - (evdev.value < -16000)) * !evdev.code) + 5 % 5;
+-////                                    printf("%d\n", selected);
+-//                                    //                                printf("%d\n", evdev.code);
+-//                                }
+-//                                pastEvent = evdev;
+-//                                break;
+-//
+-//                            default:
+-//
+-//                        }
+-//                    } while(!libevdev_has_event_pending(dev->device));
+-//
+-//                }
+-
+-                if (libevdev_has_event_pending(dev->device)) {
+-                    prominentEvent.type = 0;
+-                    prominentEvent.value = 0;
+-                    while(libevdev_has_event_pending(dev->device)) {
+-                        dev->rc = libevdev_next_event(dev->device,
+-                                                      LIBEVDEV_READ_FLAG_NORMAL | LIBEVDEV_READ_FLAG_BLOCKING, &evdev);
+-                        if (dev->rc == LIBEVDEV_READ_STATUS_SUCCESS) {
+-                            if(evdev.type == 1) {
+-                                prominentEvent = evdev;
+-                                prominentEvent.type = !(prominentEvent.value);
+-                            }
+-                            else if(evdev.type == 3) {
+-                                if(abs(evdev.value) > abs(prominentEvent.value)) {
+-                                    prominentEvent = evdev;
+-                                }
+-                            }
+-                        }
+-                    }
+-                        switch(prominentEvent.type) {
+-                        case 1:
+-                                printf("Code: %d Value: %d\n", pastEvent.code, pastEvent.value);
+-                            break;
+-                            case 3:
+-                                if(!prominentEvent.code) {
+-                                    selected = selectBox(prominentEvent.value, pastEvent.value, boxPositions, selected, 22000);
+-                                    printf("selected: %d\n", selected);
+-                                    pastEvent = prominentEvent;
+-                                }
+-                                else if (prominentEvent.code == 16) {
+-                                    selected = selectBox(prominentEvent.value, pastEvent.value, boxPositions, selected, 1);
+-                                    printf("selected: %d\n", selected);
+-                                    pastEvent = prominentEvent;
+-                                }
+-                            break;
+-                    }
+-                }
+-            }
++    while (1) {
++        //XDrawRectangle(dpy, win, gc, rando(WIDTH), rando(HEIGHT), rando(WIDTH), rando(HEIGHT));
++        if (dev->rc == LIBEVDEV_READ_STATUS_SYNC || dev->rc == LIBEVDEV_READ_STATUS_SUCCESS || dev->rc == -EAGAIN) {
++            if (libevdev_has_event_pending(dev->device)) {
++                //Reset the event grabbed from queue
++                prominentEvent.type = 0;
++                prominentEvent.value = 0;
++                while(libevdev_has_event_pending(dev->device)) { //Will loop through all events queued
++                    dev->rc = libevdev_next_event(dev->device,
++                                                  LIBEVDEV_READ_FLAG_NORMAL | LIBEVDEV_READ_FLAG_BLOCKING, &evdev);
++                    if (dev->rc == LIBEVDEV_READ_STATUS_SUCCESS) {
++                        if(evdev.type == 1) { //Want to respond to button press
++                            prominentEvent = evdev;
++                            //Value of event on release is (!(0) = 1) meaning type will not change, will change when button is pressed (!(1) = 0)
++                            //Need a better solution to fit variety of controllers
++                            prominentEvent.type = !(prominentEvent.value);
++                        }
++                        else if(evdev.type == 3) { //Want to respond to direction input
++                            if(abs(evdev.value) > abs(prominentEvent.value)) { //out of events queued grab the largest value found
++                                prominentEvent = evdev;
++                            }
++                        }
++                    }
++                }
++                switch(prominentEvent.type) {
++                case 1: //Button press
++                        printf("Code: %d Value: %d\n", pastEvent.code, pastEvent.value);
++                    break;
++                    case 3: //Directional Input
++                        if(!prominentEvent.code) { //If the code is 0 it is horizontal
++                            //Move selector to new box
++                            selected = selectBox(dpy, win, gc, prominentEvent.value, pastEvent.value, boxPositions, selected, 22000);
++//                            printf("selected: %d\n", selected);
++                            //Past event prevents selected from being changed if the joystick was in a similar position when selected was changed
++                            pastEvent = prominentEvent;
++                        }
++                        else if (prominentEvent.code == 16) {
++                            selected = selectBox(dpy, win, gc,prominentEvent.value, pastEvent.value, boxPositions, selected, 1);
++                            printf("selected: %d\n", selected);
++                            pastEvent = prominentEvent;
++                        }
++                    break;
++                }
++            }
++        }
+         usleep(10000);
+-//        }
+     }
+ 
+     XUnmapWindow(dpy,win);
+Index: input.c
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>#include <stdio.h>\n#include <stdlib.h>\n\n#include \"input.h\"\n\ncontroller* init_input(const char * file) {\n\n    controller* con = (controller*)malloc(sizeof(controller));\n\n    int fd;\n    int rc = 1;\n\n    struct libevdev *dev = NULL;\n\n    fd = open(file, O_RDONLY);\n    if (fd < 0) {\n        printf(\"Fuck you\");\n        return NULL;\n    }\n\n    rc = libevdev_new_from_fd(fd, &dev);\n\n    if(rc < 0) {\n        printf(\"It ain't looking good bruv\");\n        libevdev_free(dev);\n        return NULL;\n    }\n    con->device = dev;\n    con->rc = rc;\n    return con;\n}
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/input.c b/input.c
+--- a/input.c	(revision caa8d96fcf915610034e701e72c9f445bc44b67d)
++++ b/input.c	(date 1680059241552)
+@@ -1,6 +1,4 @@
+-#include <stdio.h>
+ #include <stdlib.h>
+-
+ #include "input.h"
+ 
+ controller* init_input(const char * file) {
+@@ -14,14 +12,12 @@
+ 
+     fd = open(file, O_RDONLY);
+     if (fd < 0) {
+-        printf("Fuck you");
+         return NULL;
+     }
+ 
+     rc = libevdev_new_from_fd(fd, &dev);
+ 
+     if(rc < 0) {
+-        printf("It ain't looking good bruv");
+         libevdev_free(dev);
+         return NULL;
+     }
+Index: Makefile
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>PROG = main\nDEPS = input#image.c\nSRC = ${PROG}.c\nOBJ = ${SRC:.c=.o}\n\nCC = gcc\nCFLAGS = `pkg-config --cflags libevdev`\nLIBS = -lX11 -lpng `pkg-config --libs libevdev`\n\nall: ${PROG}\n\n${PROG}: ${OBJ}\n\t${CC} -o $@ ${LIBS} ${OBJ} ${DEPS}.o\n\n#${DEPS}: ${OBJ}\n#\t${CC} -o $@ ${LIBS} ${OBJ}\n\n%.o: %.c\n\t${CC} -c ${SRC} ${DEPS}.c ${CFLAGS}\n\nclean:\n\t-rm ${OBJ} ${PROG}\n\n.PHONY: all clean
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/Makefile b/Makefile
+--- a/Makefile	(revision caa8d96fcf915610034e701e72c9f445bc44b67d)
++++ b/Makefile	(date 1680059193745)
+@@ -1,16 +1,16 @@
+ PROG = main
+-DEPS = input#image.c
++DEPS = gui.c input#image.c
+ SRC = ${PROG}.c
+-OBJ = ${SRC:.c=.o}
++OBJ = gui.o input.o main.o#${SRC:.c=.o}
+ 
+ CC = gcc
+ CFLAGS = `pkg-config --cflags libevdev`
+-LIBS = -lX11 -lpng `pkg-config --libs libevdev`
++LIBS = -lX11 `pkg-config --libs libevdev`
+ 
+ all: ${PROG}
+ 
+ ${PROG}: ${OBJ}
+-	${CC} -o $@ ${LIBS} ${OBJ} ${DEPS}.o
++	${CC} -o $@ ${LIBS} ${OBJ}
+ 
+ #${DEPS}: ${OBJ}
+ #	${CC} -o $@ ${LIBS} ${OBJ}
+Index: input.h
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>//#ifndef X11_INPUT_H\n//#define X11_INPUT_H\n//\n//#endif //X11_INPUT_H\n#include <libevdev/libevdev.h>\n#include <fcntl.h>\n#include <errno.h>\n\ntypedef struct controller {\n    struct libevdev* device;\n    int rc;\n} controller;\n\ncontroller* init_input(const char * file);\n\n//void print_event (struct input_event *ev);
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/input.h b/input.h
+--- a/input.h	(revision caa8d96fcf915610034e701e72c9f445bc44b67d)
++++ b/input.h	(date 1680058972482)
+@@ -1,7 +1,6 @@
+-//#ifndef X11_INPUT_H
+-//#define X11_INPUT_H
+-//
+-//#endif //X11_INPUT_H
++#ifndef MENU_INPUT_H
++#define MENU_INPUT_H
++
+ #include <libevdev/libevdev.h>
+ #include <fcntl.h>
+ #include <errno.h>
+@@ -13,4 +12,9 @@
+ 
+ controller* init_input(const char * file);
+ 
++#endif //MENU_INPUT_H
++
++
++
++
+ //void print_event (struct input_event *ev);
+\ No newline at end of file
+Index: gui.h
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/gui.h b/gui.h
+new file mode 100644
+--- /dev/null	(date 1680057277546)
++++ b/gui.h	(date 1680057277546)
+@@ -0,0 +1,40 @@
++//
++// Created by william on 28/03/23.
++//
++#ifndef MENU_GUI_H
++#define MENU_GUI_H
++#include <X11/Xlib.h>
++#include <X11/Xutil.h>
++#include <math.h>
++#include <stdlib.h>
++
++#define POSY 0
++#define POSX 0
++#define WIDTH 1920
++#define HEIGHT 1080
++#define BORDER 5
++#define GAP_HL 10
++#define BOXES 5
++
++extern unsigned long background;
++extern unsigned long foreground;
++
++typedef struct Position {
++    int x;
++    int y;
++    int width;
++    int height;
++    int r;
++
++} Position;
++
++void setPosition(Position * pos, int x, int y, int width, int height, int r);
++
++void XFillRoundedRectangle(Display * dpy, Window win, GC gc, Position pos);
++void highlightRoundedRectangle(Display * dpy, Window win, GC gc, Position pos, int g);
++
++Position * drawSelections (Display * dpy, Window win, GC gc);
++
++int selectBox (Display * dpy, Window win, GC gc, int promVal, int pastVal, Position * boxPositions, int selected, int threshold);
++
++#endif //MENU_GUI_H
+Index: gui.c
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/gui.c b/gui.c
+new file mode 100644
+--- /dev/null	(date 1680057165588)
++++ b/gui.c	(date 1680057165588)
+@@ -0,0 +1,148 @@
++#include "gui.h"
++//unsigned long RGB(int r, int g, int b) {
++//    return b + (g<<8) + (r<<16);
++//}
++//
++//void random_RGB(int * rgb)
++//{
++//    int i;
++//    for(i=0;i<3;i++)
++//    {
++//        rgb[i]=rand()%256;
++//    }
++//}
++unsigned long background = 0x2E3440;
++unsigned long foreground = 0x4C566A;
++
++void XFillRoundedRectangle(Display * dpy, Window win, GC gc, Position pos) {
++    int c = 2 * pos.r;
++
++    int xRight = pos.x + pos.width - c;
++    int yBottom = pos.y + pos.height - c;
++
++    XFillArc(dpy, win, gc, xRight, pos.y, c, c, 90 * 64, -(90 * 64));
++    XFillArc(dpy, win, gc, pos.x, pos.y, c, c, 90 * 64, 90 * 64);
++    XFillArc(dpy, win, gc, pos.x, yBottom, c, c, 180 * 64, 90*64);
++    XFillArc(dpy, win, gc, xRight, yBottom, c, c, 270 * 64, 90*64);
++    XFillRectangle(dpy, win, gc, pos.x + pos.r, pos.y, pos.width - c, pos.height);
++    XFillRectangle(dpy, win, gc, pos.x, pos.y + pos.r, pos.width, pos.height - c);
++}
++
++void highlightRoundedRectangle(Display * dpy, Window win, GC gc, Position pos, int g) {
++
++    pos.r += g;
++    int c = 2 * pos.r;
++
++    int xRightC = pos.x + pos.width - c + g;
++    int yBottomC = pos.y + pos.height - c + g;
++
++    int xRightL = pos.x + pos.width - pos.r + g;
++    int yBottomL = pos.y + pos.height - pos.r + g;
++
++    int xLeftL = pos.x + pos.r - g;
++    int yTopL = pos.y + pos.r - g;
++    XDrawArc(dpy, win, gc, xRightC, pos.y - g, c, c, 90 * 64, -(90 * 64));
++    XDrawArc(dpy, win, gc, pos.x - g, pos.y - g, c, c, 90 * 64, 90 * 64);
++    XDrawArc(dpy, win, gc, pos.x - g, yBottomC, c, c, 180 * 64, 90*64);
++    XDrawArc(dpy, win, gc, xRightC, yBottomC, c, c, 270 * 64, 90*64);
++    XDrawLine(dpy, win, gc, pos.x - g, yTopL, pos.x - g, yBottomL);
++    XDrawLine(dpy, win, gc, xRightL + pos.r, yTopL, xRightL + pos.r, yBottomL);
++    XDrawLine(dpy, win, gc, xLeftL, pos.y - g, xRightL, pos.y - g);
++    XDrawLine(dpy, win , gc, xRightL, yBottomL + pos.r, xLeftL, yBottomL + pos.r);
++}
++
++void setPosition(Position * pos, int x, int y, int width, int height, int r) {
++    pos->x = x;
++    pos->y = y;
++    pos->width = width;
++    pos->height = height;
++    pos->r = r;
++}
++
++Position * drawSelections (Display * dpy, Window win, GC gc) {
++    int boxWidth = 300;
++    int boxHeight = 500;
++    int gap = boxWidth + 75;
++    int alt = 1;
++    int x = (WIDTH / 2) - (boxWidth / 2);
++
++    XSetForeground(dpy, gc, foreground);
++
++    int index = BOXES / 2;
++
++    Position * boxPositions = (Position *)malloc(sizeof(Position) * BOXES);
++
++    for(int i = 0; i < BOXES; i++) {
++        alt = -alt;
++        x += gap * alt * i;
++
++        index += i * alt;
++
++        setPosition(&boxPositions[index], x, 200, boxWidth, boxHeight, 20);
++
++        //XFillRectangle(dpy, win, gc, x, 200, boxWidth, boxHeight);
++        XFillRoundedRectangle(dpy, win, gc, boxPositions[index]);
++//        printf("Location: %d to %d\n\n", x, x + boxWidth);
++    }
++    XFlush(dpy);
++
++    return boxPositions;
++}
++
++int selectBox (Display * dpy, Window win, GC gc, int promVal, int pastVal, Position * boxPositions, int selected, int threshold) {
++
++    //If the value pulled from the queue is past the threshold, and the previous value isn't in the same range, change can become 1 or -1
++    int change = ((promVal >= threshold && pastVal <= threshold) - (promVal <= -threshold && pastVal >= -threshold));
++
++    if(abs(change)) {
++        XSetForeground(dpy, gc, background);
++        highlightRoundedRectangle(dpy, win, gc, boxPositions[selected], GAP_HL);
++
++        selected = (selected + change + BOXES) % BOXES;
++
++        XSetForeground(dpy, gc, 0x8c97ab);
++        highlightRoundedRectangle(dpy, win, gc, boxPositions[selected], GAP_HL);
++
++        XFlush(dpy);
++    }
++    return selected;
++}
++
++//void XFillRoundedRectangle(int x, int y, int width, int height, int r) {
++//
++//    int c = 2 * r;
++//
++//    int xRight = x + width - c;
++//    int yBottom = y + height - c;
++//
++//    XFillArc(dpy, win, gc, xRight, y, c, c, 90 * 64, -(90 * 64));
++//    XFillArc(dpy, win, gc, x, y, c, c, 90 * 64, 90 * 64);
++//    XFillArc(dpy, win, gc, x, yBottom, c, c, 180 * 64, 90*64);
++//    XFillArc(dpy, win, gc, xRight, yBottom, c, c, 270 * 64, 90*64);
++//    XFillRectangle(dpy, win, gc, x + r, y, width - c, height);
++//    XFillRectangle(dpy, win, gc, x, y + r, width, height - c);
++//
++//}
++
++//void highlightRoundedRectangle(int x, int y, int width, int height, int r, int g) {
++//
++//    r += g;
++//    int c = 2 * r;
++//
++//    int xRightC = x + width - c + g;
++//    int yBottomC = y + height - c + g;
++//
++//    int xRightL = x + width - r + g;
++//    int yBottomL = y + height - r + g;
++//
++//    int xLeftL = x + r - g;
++//    int yTopL = y + r - g;
++//    XDrawArc(dpy, win, gc, xRightC, y - g, c, c, 90 * 64, -(90 * 64));
++//    XDrawArc(dpy, win, gc, x - g, y - g, c, c, 90 * 64, 90 * 64);
++//    XDrawArc(dpy, win, gc, x - g, yBottomC, c, c, 180 * 64, 90*64);
++//    XDrawArc(dpy, win, gc, xRightC, yBottomC, c, c, 270 * 64, 90*64);
++//    XDrawLine(dpy, win, gc, x - g, yTopL, x - g, yBottomL);
++//    XDrawLine(dpy, win, gc, xRightL + r, yTopL, xRightL + r, yBottomL);
++//    XDrawLine(dpy, win, gc, xLeftL, y - g, xRightL, y - g);
++//    XDrawLine(dpy, win , gc, xRightL, yBottomL + r, xLeftL, yBottomL + r);
++//}
+\ No newline at end of file
+Index: .idea/vcs.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/.idea/vcs.xml b/.idea/vcs.xml
+new file mode 100644
+--- /dev/null	(date 1680052877073)
++++ b/.idea/vcs.xml	(date 1680052877073)
+@@ -0,0 +1,6 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<project version="4">
++  <component name="VcsDirectoryMappings">
++    <mapping directory="$PROJECT_DIR$" vcs="Git" />
++  </component>
++</project>
+\ No newline at end of file

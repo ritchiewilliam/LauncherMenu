@@ -1,6 +1,4 @@
-#include <stdio.h>
 #include <stdlib.h>
-
 #include "input.h"
 
 controller* init_input(const char * file) {
@@ -14,14 +12,12 @@ controller* init_input(const char * file) {
 
     fd = open(file, O_RDONLY);
     if (fd < 0) {
-        printf("Fuck you");
         return NULL;
     }
 
     rc = libevdev_new_from_fd(fd, &dev);
 
     if(rc < 0) {
-        printf("It ain't looking good bruv");
         libevdev_free(dev);
         return NULL;
     }
