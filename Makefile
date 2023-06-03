@@ -1,11 +1,11 @@
 PROG = main
-DEPS = gui.c input#image.c
+DEPS = gui.c input.c menu#image.c
 SRC = ${PROG}.c
-OBJ = gui.o input.o main.o#${SRC:.c=.o}
+OBJ = gui.o input.o menu.o main.o#${SRC:.c=.o}
 
 CC = gcc
 CFLAGS = `pkg-config --cflags libevdev`
-LIBS = -lX11 `pkg-config --libs libevdev`
+LIBS = -lX11 -lXpm `pkg-config --libs libevdev`
 
 all: ${PROG}
 

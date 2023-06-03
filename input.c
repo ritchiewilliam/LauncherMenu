@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <fcntl.h>
 #include <dirent.h>
 #include <string.h>
 #include "input.h"
@@ -91,4 +92,3 @@ char ** configure_input() {
     free(controlFiles);
     return NULL;
 }
-

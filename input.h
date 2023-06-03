@@ -2,7 +2,6 @@
 #define MENU_INPUT_H
 
 #include <libevdev-1.0/libevdev/libevdev.h>
-#include <fcntl.h>
 #include <errno.h>
 
 typedef struct Controller {

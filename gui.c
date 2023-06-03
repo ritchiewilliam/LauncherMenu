@@ -1,18 +1,6 @@
 #include "gui.h"
-//unsigned long RGB(int r, int g, int b) {
-//    return b + (g<<8) + (r<<16);
-//}
-//
-//void random_RGB(int * rgb)
-//{
-//    int i;
-//    for(i=0;i<3;i++)
-//    {
-//        rgb[i]=rand()%256;
-//    }
-//}
-unsigned long background = 0x2E3440;
-unsigned long foreground = 0x4C566A;
+//unsigned long background = ;
+//unsigned long foreground = 0x4C566A;
 
 void XFillRoundedRectangle(Display * dpy, Window win, GC gc, Position pos) {
     int c = 2 * pos.r;
@@ -59,54 +47,54 @@ void setPosition(Position * pos, int x, int y, int width, int height, int r) {
     pos->r = r;
 }
 
-Position * drawSelections (Display * dpy, Window win, GC gc) {
-    int boxWidth = 300;
-    int boxHeight = 500;
-    int gap = boxWidth + 75;
-    int alt = 1;
-    int x = (WIDTH / 2) - (boxWidth / 2);
+//int stringToInt(char * s, int l) {
+//    int value = 0;
+//
+//    for(int i = l - 1; i >= 0; i++) {
+//        value += (int)powf((float)10, (float)(i)) * (s[i] - '0');
+//    }
+//    return value;
+//}
 
-    XSetForeground(dpy, gc, foreground);
+//void settingsImage(Pixmap * image) {
+//
+//    XCreatePixmapFromBitmapData;
+//    XCreatePixmap(dpy, win, 30, 30, 0);
+//    image = (XImage *)malloc(sizeof(XImage));
+//    int * params = (int *) malloc(sizeof(int)* 4);
+//    int start = 0;
+//    for(int i, j = 0; settings[1][i]; i++) {
+//        if(settings[1][i] == ' ') {
+//            int difference = i - start;
+//            char * parsed = (char*)malloc(sizeof(char)* i - start);
+//            memcpy(parsed, settings[1] + start, i - start + 1);
+//            parsed[i - start] = 0;
+//            params[j] = stringToInt(parsed, i - start);
+//            free(parsed);
+//            start = i + 1;
+//            j++;
+//        }
+//    }
+//
+//    image->width = params[0];
+//    image->height = params[1];
+//    image->
+//
+//    for(int i = 0; settings[i]; i++) {
+//
+//    }
+//}
 
-    int index = BOXES / 2;
-
-    Position * boxPositions = (Position *)malloc(sizeof(Position) * BOXES);
-
-    for(int i = 0; i < BOXES; i++) {
-        alt = -alt;
-        x += gap * alt * i;
-
-        index += i * alt;
-
-        setPosition(&boxPositions[index], x, 200, boxWidth, boxHeight, 20);
-
-        //XFillRectangle(dpy, win, gc, x, 200, boxWidth, boxHeight);
-        XFillRoundedRectangle(dpy, win, gc, boxPositions[index]);
-//        printf("Location: %d to %d\n\n", x, x + boxWidth);
-    }
-    XFlush(dpy);
-
-    return boxPositions;
-}
-
-int selectBox (Display * dpy, Window win, GC gc, int promVal, int pastVal, Position * boxPositions, int selected, int threshold) {
-
-    //If the value pulled from the queue is past the threshold, and the previous value isn't in the same range, change can become 1 or -1
-    int change = ((promVal >= threshold && pastVal <= threshold) - (promVal <= -threshold && pastVal >= -threshold));
-
-    if(abs(change)) {
-        XSetForeground(dpy, gc, background);
-        highlightRoundedRectangle(dpy, win, gc, boxPositions[selected], GAP_HL);
-
-        selected = (selected + change + BOXES) % BOXES;
-
-        XSetForeground(dpy, gc, 0x8c97ab);
-        highlightRoundedRectangle(dpy, win, gc, boxPositions[selected], GAP_HL);
-
-        XFlush(dpy);
-    }
-    return selected;
-}
+//void loadImage(XImage * image, char * directory) {
+//    FILE * fp = fopen(directory, "r");
+//    char * line;
+//    while() {
+//        fgets(line, fp);
+//
+//    }
+//
+//
+//}
 
 //void XFillRoundedRectangle(int x, int y, int width, int height, int r) {
 //

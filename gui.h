@@ -7,17 +7,18 @@
 #include <X11/Xutil.h>
 #include <math.h>
 #include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+//#include "res/settings.xpm"
 
-#define POSY 0
-#define POSX 0
-#define WIDTH 1920
-#define HEIGHT 1080
+#define WIDTH 900
+#define HEIGHT 500
 #define BORDER 5
-#define GAP_HL 10
+//#define GAP_HL 10
 #define BOXES 5
-
-extern unsigned long background;
-extern unsigned long foreground;
+#define BACKGROUND 0x2E3440
+#define FOREGROUND 0x4C566A
+#define HIGHLIGHT 0x8c97ab
 
 typedef struct Position {
     int x;
@@ -33,8 +34,11 @@ void setPosition(Position * pos, int x, int y, int width, int height, int r);
 void XFillRoundedRectangle(Display * dpy, Window win, GC gc, Position pos);
 void highlightRoundedRectangle(Display * dpy, Window win, GC gc, Position pos, int g);
 
-Position * drawSelections (Display * dpy, Window win, GC gc);
+void settingsImage(XImage * image);
 
-int selectBox (Display * dpy, Window win, GC gc, int promVal, int pastVal, Position * boxPositions, int selected, int threshold);
+
+//Position * drawSelections (Display * dpy, Window win, GC gc);
+
+//int selectBox (Display * dpy, Window win, GC gc, int promVal, int pastVal, Position * boxPositions, int selected, int threshold);
 
 #endif //MENU_GUI_H
