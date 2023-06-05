@@ -1,12 +1,17 @@
 #ifndef MENU_INPUT_H
 #define MENU_INPUT_H
 
+#include <poll.h>
 #include <libevdev-1.0/libevdev/libevdev.h>
 #include <errno.h>
+#include "gui.h"
 
 typedef struct Controller {
     struct libevdev* device;
-    int rc;
+    int joyMax;
+    int joyMin;
+    int A;
+    int B;
 } Controller;
 
 typedef struct Input {
@@ -27,9 +32,14 @@ typedef struct Input {
     char bumpR;
 } Input;
 
-int init_input(Controller * con, const char * file);
+int initInput(Controller * con, const char * file, int * fd);
 
-char ** configure_input();
+char ** findInput(int * devices);
+
+char * selectInput(Display * dpy, Window win, GC gc, char** deviceFiles, int n);
+
+void menuLoop (Display* dpy, Window win, GC gc, Controller dev, int rc, struct pollfd* events);
+
 
 #endif //MENU_INPUT_H
 

@@ -5,7 +5,7 @@ OBJ = gui.o input.o menu.o main.o#${SRC:.c=.o}
 
 CC = gcc
 CFLAGS = `pkg-config --cflags libevdev`
-LIBS = -lX11 -lXpm `pkg-config --libs libevdev`
+LIBS = -lX11 -lXpm -lm `pkg-config --libs libevdev`
 
 all: ${PROG}
 

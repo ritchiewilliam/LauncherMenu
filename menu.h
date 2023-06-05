@@ -4,14 +4,14 @@
 #include "gui.h"
 #include "input.h"
 
-#include <X11/Xlib.h>
-#include <X11/Xutil.h>
 
 void drawSelections (Display * dpy, Window win, GC gc, int width, int height);
 
 void keyboardLoop(Display * dpy, Window win, GC gc);
 
-void controllerLoop(Display * dpy, Window win, GC gc, Controller * dev, int ctlFd);
+//void controllerLoop(Display * dpy, Window win, GC gc, Controller dev, int ctlFd, int rc);
+
+void controlLoop(void (*f)(Display*, Window, GC, Controller, int, struct pollfd*), Display * dpy, Window win, GC gc, Controller dev, int ctlFd, int rc);
 
 
 #endif //MENU_MENU_H

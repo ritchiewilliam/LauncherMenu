@@ -10,12 +10,9 @@
 #include <X11/xpm.h>
 
 Display* dpy;
-//static int scr;
 Window win;
 GC gc;
 
-//int WIDTH = 800;
-//int HEIGHT = 500;
 int ctlFd;
 
 static void quit() {
@@ -59,8 +56,7 @@ int main() {
     atexit(quit);
 
     init();
-    drawSelections(dpy, win, gc, WIDTH, HEIGHT);
-    XFlush(dpy);
+
 //    XImage *image;
 //    XpmReadFileToImage(dpy, "res/settings.xpm", &image, NULL, NULL);
 //    XPutImage(dpy, win, gc, image, 0, 0, 20, 20, image->width, image->height);
@@ -69,23 +65,34 @@ int main() {
 //    highlightRoundedRectangle(dpy, win, gc, boxPositions[0], gap_hl);
 //    XFlush(dpy);
 
-    char ** controllers = configure_input();
-    struct Controller* dev = (Controller*)malloc(sizeof(Controller));
+
+    int devices;
+    char ** controllers = findInput(&devices);
+
+    char * selectedDev = selectInput(dpy, win, gc, controllers, devices);
+
+//    Controller* dev; = (Controller*)malloc(sizeof(Controller));
+    Controller dev;
 
 
+    drawSelections(dpy, win, gc, WIDTH, HEIGHT);
 
-    if(controllers == NULL) {
+    XFlush(dpy);
+
+    if(selectedDev == NULL) {
         printf("No controller connected, using keyboard\n");
         keyboardLoop(dpy, win, gc);
     }
     else {
-        printf("%s\n", controllers[0]);
-        init_input(dev, controllers[0]);
-        ctlFd = open(controllers[0], O_RDONLY);
-        controllerLoop(dpy, win, gc, dev, ctlFd);
+//        printf("%s\n", controllers[0][0]);
+        int rc = initInput(&dev, selectedDev, &ctlFd);
+
+//        if (loadBounds(&dev) == -1) {
+//            libevdev_get_abs_maximum();
+//        }
+        printf("%d\n", dev.joyMax);
+        controlLoop(menuLoop, dpy, win, gc, dev, ctlFd, rc);
     }
 
     quit();
 }
-
-

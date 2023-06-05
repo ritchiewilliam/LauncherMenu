@@ -1,4 +1,6 @@
 #include "gui.h"
+#include <stdio.h>
+
 //unsigned long background = ;
 //unsigned long foreground = 0x4C566A;
 
@@ -45,6 +47,54 @@ void setPosition(Position * pos, int x, int y, int width, int height, int r) {
     pos->width = width;
     pos->height = height;
     pos->r = r;
+}
+
+XFontStruct * scaleFont(Display * dpy, char * font, int size) {
+    //"-misc-open sans light-light-r-normal--0-0-1000-1000-p-0-adobe-standard"
+
+    int split = 0;
+    //Can scale pixel size using the parameter after 7th dash, find the 7th dash
+    for(int i = 0; i < 7; split++) {
+        i += (font[split] == '-');
+        if(font[i] == 0) {
+            return NULL;
+        }
+    }
+    //Inserting new size into 7th parameter slot
+
+    //Split first half of string
+    char first[split + 1];
+    first[split] = 0;
+    memcpy(first, font, split);
+
+    //Triming out previous parameter if any parameter was placed in the string
+    int trim;
+    for(trim = split; font[trim] != '-'; trim++);
+    trim -= split;
+
+    //Length of the string plus \0
+    int length = (int)strlen(font) + 1;
+
+    char second[length - split - trim + 1];
+    memcpy(second, font + split + trim, length - split - trim);
+
+    size += !size; //Don't want to do log10 of 0
+
+    //The length of the original string, take away original scale, adding the number of digits in the new size
+    char new[length-trim+(int)log10(size)+1];
+    sprintf(new, "%s%d%s", first, size, second);
+//    printf("%s\n", new);
+
+    return XLoadQueryFont(dpy, new);
+}
+
+int centerText(Display * dpy, Window win, GC gc, XFontStruct * font, char * text, int y, int width) {
+
+    int x = (width/2) - (XTextWidth(font, text, (int)strlen(text)) / 2);
+
+    XDrawString(dpy, win, gc, x, y, text, (int)strlen(text));
+
+    return x;
 }
 
 //int stringToInt(char * s, int l) {
